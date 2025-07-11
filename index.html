@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multimodal AI Assistant</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #ffe0ec, #e0f7fa);
+            margin: 0;
+            padding: 40px;
+            color: #333;
+        }
+
+        h1 {
+            color: #4A148C;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section {
+            background: #fff;
+            border-radius: 15px;
+            padding: 25px 30px;
+            margin: 20px auto;
+            width: 80%;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        h3 {
+            color: #006064;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #ff80ab;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #f06292;
+        }
+
+        #output, #emotionResult {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        video {
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🌸 Multimodal AI Assistant 🌸</h1>
+
+    <div class="section">
+        <h3>Ask your question 💬</h3>
+        <input type="text" id="question" placeholder="Type your question here...">
+        <button onclick="askQuestion()">Ask</button>
+        <button onclick="askVoice()">🎤 Voice Input</button>
+        <div id="output"></div>
+    </div>
+
+    <div class="section">
+        <h3>Emotion Detection 😊</h3>
+        <video id="video" width="320" height="240" autoplay></video><br>
+        <button onclick="sendFrame()">Send Frame</button>
+        <div id="emotionResult"></div>
+    </div>
+
+    <script>
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+            const data = await response.json();
+            document.getElementById('output').innerText = 'Answer: ' + data.answer;
+        }
+
+        async function askVoice() {
+            const response = await fetch('/voice', { method: 'POST' });
+            const data = await response.json();
+            document.getElementById('output').innerText = `You said: ${data.transcript}\nAnswer: ${data.answer}`;
+        }
+
+        async function sendFrame() {
+            const canvas = document.createElement('canvas');
+            const video = document.getElementById('video');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(async function(blob) {
+                const formData = new FormData();
+                formData.append('frame', blob, 'frame.jpg');
+                const response = await fetch('/emotion', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                document.getElementById('emotionResult').innerText =
+                    `Emotion: ${data.emotion} (${data.confidence}%)\n${data.message}`;
+            }, 'image/jpeg');
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                document.getElementById('video').srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Error accessing camera:', err);
+            });
+    </script>
+</body>
+</html>
+
+
+
+
